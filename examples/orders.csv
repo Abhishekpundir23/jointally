@@ -1,0 +1,11 @@
+order_id,customer_id,region,revenue
+1001,northstar,US,1200.00
+1002,juniper,EU,800.00
+1003,orbit,US,1600.00
+1004,northstar,EU,1850.00
+1005,cedar,APAC,975.25
+1006,marlin,US,1175.00
+1007,juniper,US,650.00
+1008,northstar,APAC,950.00
+1009,cedar,APAC,615.75
+1010,lumen,EU,500.00

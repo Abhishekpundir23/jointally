@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#faf8f2">
+  <meta name="description" content="See how a CSV join changes your totals, down to the individual key. Both tables stay in your browser.">
+  <title>JoinTally · Join workbench</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='7' fill='%23f8bf44'/%3E%3Cpath d='M10 10v20m6-20v20m7-20v20m6-20v20M6 25l28-11' stroke='%23232123' stroke-width='2.5' fill='none'/%3E%3C/svg%3E">
+  <style>
+:root {
+  color-scheme: light;
+  --paper: #faf8f2;
+  --ink: #202023;
+  --muted: #635f57;
+  --rule: #d7d1c4;
+  --gold: #ffc34e;
+  --serif: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-text-size-adjust: 100%;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+h1,h2,h3,p,fieldset,legend { margin: 0; }
+h1,h2,h3 { text-wrap: balance; }
+button,input,select,textarea { font: inherit; }
+button, select { cursor: pointer; }
+button { background: transparent; color: var(--ink); }
+button:disabled { opacity: .5; cursor: default; }
+button,select,input,textarea,.table-scroll { outline-offset: 4px; }
+:focus-visible { outline: 3px solid #8b5e08; }
+.masthead { border-bottom: 1px solid var(--ink); }
+.mast-inner,.layout { max-width: 1640px; margin: 0 auto; }
+.mast-inner { display: flex; align-items: center; gap: 23px; padding: 20px clamp(22px, 3.1vw, 53px); }
+.brand { display: flex; align-items: center; gap: 11px; font: 700 2.15rem/1 var(--serif); letter-spacing: -.065em; }
+.brand-mark { width: 37px; height: 37px; color: var(--gold); }
+.workbench { border-left: 1px solid #b1aa9a; padding-left: 23px; color: var(--muted); font-size: .87rem; font-weight: 500; }
+.action,.quiet,.add-key,.close { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--ink); border-radius: 5px; padding: 9px 14px; font-size: .83rem; line-height: 1.25; font-weight: 650; }
+.action { background-color: var(--ink); color: var(--paper); }
+.action:hover { background-color: #39383d; }
+.repo-link { margin-left: auto; color: var(--muted); text-decoration: none; font-size: .79rem; }
+.repo-link:hover { color: var(--ink); text-decoration: underline; }
+.repo-link:focus-visible { outline-offset: 4px; }
+@media(max-width:540px) { .workbench { display:none; } }
+button svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.65; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.quiet,.add-key { border-color: #b7b1a4; }
+.quiet:hover,.add-key:hover,.close:hover { background: #eeeae0; border-color: #8c867a; }
+.layout { display: grid; grid-template-columns: minmax(245px, 23%) minmax(0,1fr); min-height: calc(100vh - 78px); }
+.sidebar { border-right: 1px solid var(--rule); padding: 34px clamp(17px, 1.9vw, 34px) 40px clamp(22px, 3.1vw, 53px); }
+.setup-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.setup-heading h2 { font: 600 1.65rem/1.1 var(--serif); letter-spacing: -.052em; }
+.field-group { padding: 0; border: 0; min-width: 0; margin-top: 27px; }
+.field-group label:not(.segments label),.field-group h3,.field-group legend { display: block; margin: 0 0 9px; font-size: .81rem; font-family: var(--sans); line-height: 1.35; font-weight: 700; }
+.source { display: grid; align-items: center; grid-template-columns: 31px minmax(0,1fr); column-gap: 10px; padding: 9px 0; }
+.source + .source { border-top: 1px solid var(--rule); }
+.side-tag { font: 600 .64rem/1.1 var(--mono); border: 1px solid var(--rule); padding: 6px 0; border-radius: 3px; text-align: center; background: #f4f1e8; }
+.source-name { display: block; font: 600 .8rem/1.35 var(--mono); overflow-wrap: anywhere; }
+.source-detail { display: block; margin-top: 2px; font-size: .73rem; color: var(--muted); }
+select { width: 100%; min-width: 0; height: 36px; padding: 0 24px 0 9px; appearance: none; color: var(--ink); font: .79rem/1.2 var(--sans); border: 1px solid #bbb5a9; border-radius: 4px; background: #fffdf8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m2 4 4 4 4-4' fill='none' stroke='%235e5b54' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat right 7px center; }
+select:hover { border-color: #767267; }
+.key-pair,.key-labels { display: grid; grid-template-columns: minmax(0,1fr) 12px minmax(0,1fr); gap: 4px; align-items: center; }
+.key-pair { margin-bottom: 7px; }
+.key-labels { font: .67rem/1.2 var(--sans); color: var(--muted); margin-bottom: 5px; }
+.key-labels span:nth-child(2) { grid-column: 3; }
+.key-arrow { color: var(--muted); font-size: .77rem; text-align: center; }
+.key-pair select { padding-left: 6px; font: .73rem/1 var(--sans); }
+.key-line { position: relative; }
+.key-line.removable { margin-bottom: 9px; }
+.remove-key { display: block; margin: -3px 0 0 auto; border: 0; border-bottom: 1px dotted var(--muted); padding: 0; font-size: .68rem; color: var(--muted); }
+.add-key { padding: 5px 9px; font-size: .74rem; }
+.segments { display: flex; border: 1px solid #b6b0a3; border-radius: 4px; overflow: hidden; }
+.segments label { flex: 1; text-align: center; cursor: pointer; position: relative; }
+.segments input { width: 1px; height: 1px; position: absolute; opacity: 0; }
+.segments span { display: block; font-size: .79rem; padding: 8px 0; font-weight: 550; }
+.segments input:checked + span { background: var(--gold); color: #211e16; font-weight: 700; }
+.segments input:focus-visible + span { outline: 2px solid #785300; outline-offset: -3px; }
+.segments label + label { border-left: 1px solid #b6b0a3; }
+.example-field { border-top: 1px solid var(--rule); padding-top: 17px; }
+main { min-width: 0; padding: 29px clamp(22px, 3.1vw, 53px) 55px; }
+.report-head,.breakdown-head,.dialog-head,.dialog-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+h1 { font: 650 clamp(2.7rem,4.5vw,4.3rem)/1.06 var(--serif); letter-spacing: -.067em; }
+.report-head { margin: 0 0 21px; }
+.report-head .quiet { font-size: .75rem; }
+.hero { display: grid; grid-template-columns: minmax(0,1.13fr) minmax(0,1fr); align-items: center; padding: clamp(22px,2.6vw,42px); gap: clamp(16px,2.2vw,40px); background: #202024; color: var(--paper); border-radius: 7px; }
+.net { min-width: 0; }
+.net h2 { font: 500 clamp(1rem,1.5vw,1.45rem)/1.3 var(--serif); overflow-wrap: anywhere; }
+.delta { margin-top: 9px; font: 550 clamp(2.5rem,4.8vw,5rem)/1.08 var(--serif); letter-spacing: -.055em; color: var(--gold); overflow-wrap: anywhere; font-variant-numeric: lining-nums tabular-nums; }
+.delta.zero { color: #cde4c5; }
+.delta.long { font-size: clamp(1.8rem,3vw,3rem); }
+.bars { padding-left: clamp(15px,2.1vw,35px); border-left: 1px solid #525156; min-width: 0; }
+.bar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: .74rem; line-height: 1.3; color: #e3dfd5; }
+.bar-head strong { font: 500 .88rem/1.4 var(--mono); overflow-wrap: anywhere; text-align: right; min-width: 0; }
+.track { width: 100%; height: 8px; margin-top: 7px; background: #38383c; overflow: hidden; }
+.track span { display: block; height: 100%; background: #ede8d8; }
+#after-bar { background: var(--gold); }
+.track + .bar-head { margin-top: 16px; }
+.components { display: grid; grid-template-columns: 1fr 1fr 1fr; margin-top: 20px; padding: 14px 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.components section { min-width: 0; }
+.components section + section { padding-left: 20px; border-left: 1px solid var(--rule); }
+.components h2 { font: 600 .78rem/1.3 var(--sans); }
+.components strong { display: block; margin-top: 6px; font: 500 clamp(1.12rem,2vw,1.8rem)/1.2 var(--mono); letter-spacing: -.055em; overflow-wrap: anywhere; }
+.components p { margin-top: 4px; font: .75rem/1.4 var(--sans); color: var(--muted); }
+.suggestion { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; border-left: 3px solid #d2921d; padding: 14px 16px; background: #f9edc9; }
+.suggestion h2 { font: 600 1.19rem/1.25 var(--serif); letter-spacing: -.025em; }
+.suggestion p { color: #584b31; font-size: .79rem; margin-top: 2px; }
+.suggestion button { background: #fffaf0; color: var(--ink); border-color: #9f8858; font-size: .77rem; white-space: nowrap; }
+.suggestion button:hover { background: white; }
+.breakdown { margin-top: 26px; }
+.breakdown-head { margin-bottom: 12px; align-items: baseline; }
+.breakdown h2,.dialog-head h2 { font: 650 clamp(1.55rem,2.3vw,2.25rem)/1.1 var(--serif); letter-spacing: -.052em; }
+#key-count { color: var(--muted); font-size: .73rem; text-align: right; }
+.table-scroll { overflow: auto; max-width: 100%; }
+table { width: 100%; border-collapse: collapse; font: .86rem/1.4 var(--mono); font-variant-numeric: tabular-nums; }
+th,td { padding: 10px 10px; text-align: right; vertical-align: top; border-bottom: 1px solid var(--rule); }
+th { white-space: nowrap; font: 650 .73rem/1.25 var(--sans); background: #f0ede4; border-top: 1px solid #b1aa9d; }
+th:first-child,td:first-child { text-align: left; }
+th:first-child { white-space: normal; overflow-wrap: anywhere; }
+td:first-child { overflow-wrap: anywhere; min-width: 69px; max-width: 270px; }
+td:last-child { font-weight: 650; }
+.key-value { display: inline-block; white-space: pre-wrap; }
+.key-part-separator { color: #a4987c; margin: 0 .35em; }
+.drift-row td:last-child { color: #805605; }
+#no-keys { color: var(--muted); font-size: .85rem; margin-top: 14px; }
+#more { margin-top: 13px; }
+.mobile-only,.sr-only { display: none; }
+.sr-only { display: block; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+.error { padding: 12px 14px; background: #fae6db; border-left: 3px solid #9f4e33; color: #772b1b; line-height: 1.5; font-size: .9rem; overflow-wrap: anywhere; }
+dialog { color: var(--ink); background: var(--paper); width: min(660px,calc(100% - 32px)); max-height: calc(100vh - 40px); padding: clamp(20px,3vw,32px); border: 1px solid var(--ink); border-radius: 8px; }
+dialog::backdrop { background: rgba(23,22,21,.47); }
+.dialog-note { color: var(--muted); font-size: .89rem; line-height: 1.5; margin: 12px 0 22px; }
+.close { border: 0; font-size: 1.3rem; padding: 4px 9px; }
+.csv-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.csv-inputs > div { min-width: 0; }
+.csv-inputs label { font: 600 1.2rem/1.3 var(--serif); }
+.csv-inputs input,.csv-inputs textarea { display: block; width: 100%; margin-top: 8px; }
+.csv-inputs input { font-size: .76rem; }
+.csv-inputs textarea { padding: 8px; min-height: 152px; resize: vertical; color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; font: .75rem/1.45 var(--mono); }
+#import-error { margin-top: 13px; }
+.dialog-actions { justify-content: flex-end; margin-top: 18px; }
+@media(max-width:1000px) and (min-width:761px) {
+  .layout { grid-template-columns: 228px minmax(0,1fr); }
+  .sidebar { padding: 25px 16px; }
+  main { padding: 24px 20px; }
+  .key-pair select { font-size: .7rem; }
+  .hero { gap: 12px; padding: 21px; }
+  .bar-head { flex-wrap: wrap; gap: 3px; }
+}
+@media(max-width:760px) {
+  .mast-inner { padding: 14px 17px; gap: 12px; }
+  .brand { font-size: 1.7rem; gap: 8px; }
+  .brand-mark { width: 31px; height: 31px; }
+  .workbench { font-size: .74rem; padding-left: 12px; }
+  .import { padding: 7px 9px; font-size: .75rem; }
+  .layout { display: block; }
+  .sidebar { padding: 10px 18px; border-right: none; border-bottom: 1px solid var(--rule); }
+  .setup-heading h2 { font-size: 1.15rem; }
+  .mobile-only { display: inline-flex; font-size: .73rem; padding: 5px 9px; }
+  #setup-body { display: none; padding: 2px 0 12px; }
+  #setup-body.open { display: block; }
+  .field-group { margin-top: 18px; }
+  main { padding: 21px 17px 40px; }
+  .report-head { margin-bottom: 14px; }
+  .report-head .quiet { padding: 6px 8px; }
+  .hero { padding: 18px; }
+  .components section + section { padding-left: 11px; }
+  .components h2,.components p { font-size: .69rem; }
+  .components { margin-top: 12px; }
+  .suggestion { margin-top: 14px; padding: 11px; gap: 8px; }
+  .suggestion h2 { font-size: 1.06rem; }
+  .suggestion p { font-size: .72rem; }
+  .suggestion button { padding: 7px 9px; font-size: .72rem; }
+  .breakdown { margin-top: 22px; }
+  th,td { padding: 8px 7px; }
+  #key-count { font-size: .67rem; }
+}
+@media(max-width:510px) {
+  .hero { grid-template-columns: 1fr; gap: 15px; }
+  .delta { font-size: 3.1rem; }
+  .bars { padding: 13px 0 0; border-left: 0; border-top: 1px solid #525156; }
+  .track + .bar-head { margin-top: 9px; }
+  .track { height: 5px; margin-top: 4px; }
+  .components p { line-height: 1.3; }
+  .suggestion p { max-width: 23ch; }
+  .csv-inputs { grid-template-columns: 1fr; }
+  .csv-inputs textarea { min-height: 65px; max-height: 95px; }
+}
+@media(max-width:360px) { .workbench { display:none; } .components section + section { padding-left: 6px; } }
+#offset-detail { font-size: .76rem; line-height: 1.4; color: #f6dcae; margin-top: 7px; }
+
+.short-label { display: none; }
+@media(max-width:510px) {
+  .wide-label { display: none; }
+  .short-label { display: inline; }
+  table { font-size: .75rem; }
+  th,td { padding: 8px 4px; }
+  th:first-child,td:first-child { min-width: 75px; }
+}
+
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="mast-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="7" fill="currentColor"/><path d="M10 10v20m6-20v20m7-20v20m6-20v20M6 25l28-11" fill="none" stroke="#202022" stroke-width="2.6" stroke-linecap="round"/></svg>
+        <span>JoinTally</span>
+      </div>
+      <span class="workbench">Workbench</span>
+      <a class="repo-link" href="https://github.com/Abhishekpundir23/jointally" aria-label="View source on GitHub">GitHub <span aria-hidden="true">↗</span></a>
+      <button type="button" id="import" class="action import"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 12V3m-3.5 3.5L10 3l3.5 3.5M3 12v4h14v-4"/></svg>Import CSVs</button>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Join setup">
+      <div class="setup-heading"><h2>Join setup</h2><button id="toggle-settings" class="quiet mobile-only" type="button" aria-controls="setup-body" aria-expanded="false">Edit setup</button></div>
+      <div id="setup-body">
+        <section class="field-group sources"><h3>Tables</h3><div id="sources"></div></section>
+        <section class="field-group"><h3>Join keys</h3><div class="key-labels" aria-hidden="true"><span>Left column</span><span>Right column</span></div><div id="key-inputs"></div><button id="add-key" class="add-key" type="button">+ Add key</button></section>
+        <div class="field-group"><label for="measure">Measure</label><select id="measure"></select></div>
+        <fieldset class="field-group"><legend>Join type</legend><div class="segments"><label><input type="radio" name="join" value="left" checked><span>Left join</span></label><label><input type="radio" name="join" value="inner"><span>Inner join</span></label></div></fieldset>
+        <div class="field-group"><label for="nulls">Empty keys</label><select id="nulls"><option value="distinct">Never match</option><option value="match">Match empty fields</option></select></div>
+        <div class="field-group example-field"><label for="example">Try an example</label><select id="example"><option value="regional">Regional customers</option><option value="balanced">Hidden offset</option><option value="custom" hidden>Custom tables</option></select></div>
+      </div>
+    </aside>
+    <main>
+      <div class="report-head"><h1>Join impact</h1><button id="export" class="quiet" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m-3.5-3.5L10 12l3.5-3.5M3 13v3h14v-3"/></svg>Export JSON</button></div>
+      <p id="analysis-error" role="alert" class="error" hidden></p>
+      <div id="report" hidden>
+        <section class="hero" aria-labelledby="metric-label">
+          <div class="net"><h2 id="metric-label">Net change</h2><div id="delta" class="delta"></div><p id="offset-detail" hidden>Row-level changes offset in the total.</p></div>
+          <div class="bars">
+            <div class="bar-head"><span>Before join</span><strong id="before"></strong></div><div class="track"><span id="before-bar"></span></div>
+            <div class="bar-head"><span>After join</span><strong id="after"></strong></div><div class="track"><span id="after-bar"></span></div>
+          </div>
+        </section>
+        <div class="components">
+          <section><h2>Repeated amount</h2><strong id="repeated"></strong><p id="repeat-detail"></p></section>
+          <section><h2>Dropped amount</h2><strong id="dropped"></strong><p id="drop-detail"></p></section>
+          <section><h2>Output rows</h2><strong id="output-rows"></strong><p id="input-detail"></p></section>
+        </div>
+        <div class="suggestion" id="suggestion" hidden>
+          <div><h2>Match on region too</h2><p>Try the demo with a two-column customer key.</p></div><button type="button" id="region-key" class="action">Add region key <span aria-hidden="true">↗</span></button>
+        </div>
+        <section class="breakdown" aria-labelledby="breakdown-title">
+          <div class="breakdown-head"><h2 id="breakdown-title">Key breakdown</h2><span id="key-count"></span></div>
+          <div class="table-scroll" tabindex="0" aria-label="Key breakdown table"><table><thead><tr><th id="key-header" scope="col">Key</th><th scope="col" aria-label="Left rows"><span class="wide-label">Left rows</span><span class="short-label" aria-hidden="true">Left</span></th><th scope="col" aria-label="Right matches"><span class="wide-label">Right matches</span><span class="short-label" aria-hidden="true">Right</span></th><th scope="col" aria-label="Output rows"><span class="wide-label">Output rows</span><span class="short-label" aria-hidden="true">Joined</span></th><th scope="col" aria-label="Amount change"><span class="wide-label">Amount change</span><span class="short-label" aria-hidden="true">Change</span></th></tr></thead><tbody id="key-body"></tbody></table></div>
+          <p id="no-keys" hidden>The left table contains no data rows.</p>
+          <button type="button" id="more" class="quiet" hidden>Show more keys</button>
+        </section>
+      </div>
+      <p class="sr-only" role="status" id="status"></p>
+      <noscript>Enable JavaScript to analyze your CSVs in this browser.</noscript>
+    </main>
+  </div>
+  <dialog aria-labelledby="import-heading" id="import-dialog">
+    <form id="import-form"><div class="dialog-head"><h2 id="import-heading">Import CSVs</h2><button id="cancel" type="button" class="close" aria-label="Close import dialog">×</button></div>
+      <p class="dialog-note">Choose files or paste CSV with a header row. Both tables stay in this browser.</p>
+      <div class="csv-inputs">
+        <div><label for="left-text">Left table</label><input type="file" id="left-file" aria-label="Choose left CSV" accept=".csv,text/csv,text/plain"><textarea id="left-text" required spellcheck="false" placeholder="order_id,customer_id,revenue"></textarea></div>
+        <div><label for="right-text">Right table</label><input type="file" id="right-file" aria-label="Choose right CSV" accept=".csv,text/csv,text/plain"><textarea id="right-text" required spellcheck="false" placeholder="customer_id,region"></textarea></div>
+      </div>
+      <p id="import-error" class="error" role="alert" hidden></p>
+      <div class="dialog-actions"><button type="button" id="import-cancel" class="quiet">Cancel</button><button type="submit" id="load" class="action">Load tables</button></div>
+    </form>
+  </dialog>
+<script>
+(()=>{var ye=/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;function ne(e,n){if(!Array.isArray(e)||!Array.isArray(e[0])||!e[0].length)throw new Error(`${n} input needs a header row.`);let r=new Map;for(let[t,s]of e[0].entries()){if(typeof s!="string"||!s.trim())throw new Error(`${n} header at column ${t+1} is empty or invalid.`);if(r.has(s))throw new Error(`${n} has a duplicate header: ${JSON.stringify(s)}.`);r.set(s,t)}return r}function ie(e,n,r){if(!e.has(n))throw new Error(`Unknown ${r} column: ${JSON.stringify(n)}.`);return e.get(n)}function re(e,n,r){let t=e.map(s=>ie(n,s?.[r],r));if(new Set(t).size!==t.length)throw new Error(`A ${r} key column is mapped more than once.`);return t}function oe(e,n,r,t){if(!Array.isArray(e)||e.length!==n)throw new Error(`${r} row ${t} must have ${n} fields.`);for(let s of e)if(typeof s!="string")throw new Error(`${r} row ${t} contains a non-string field.`)}function we(e,n,r){let t=e.trim();if(!ye.test(t))throw new Error(`Left row ${n}, measure ${JSON.stringify(r)} must contain a decimal number.`);let s=t.indexOf("."),c=s===-1?0:t.length-s-1;return{units:BigInt(t.replace(".","")),scale:c}}function J(e,n){return n===0||e===0n?e:e*10n**BigInt(n)}function U(e,n){let r=(e<0n?-e:e).toString().padStart(n+1,"0"),t=n?r.slice(0,-n)+"."+r.slice(-n):r;return e<0n?"-"+t:t}function P(e){if(!Number.isSafeInteger(e))throw new Error("The join exceeds the safe integer row-count limit.");return e}function be(e,n){if(e.absDelta!==n.absDelta)return e.absDelta>n.absDelta?-1:1;if(e.extraRows!==n.extraRows)return n.extraRows-e.extraRows;for(let r=0;r<e.values.length;r++)if(e.values[r]!==n.values[r])return e.values[r]<n.values[r]?-1:1;return 0}function se(e,n,r,t){let s=n-r;return{before:U(e,t),after:U(e+s,t),repeated:U(n,t),dropped:U(r,t),delta:U(s,t)}}function W(e,n,r={}){let{keys:t,measure:s,join:c="left",nulls:a="distinct",limit:i=30}=r;if(c!=="left"&&c!=="inner")throw new Error('Join must be "left" or "inner".');if(a!=="distinct"&&a!=="match")throw new Error('Nulls must be "distinct" or "match".');if(!Number.isSafeInteger(i)||i<0)throw new Error("Limit must be a nonnegative safe integer.");if(!Array.isArray(t)||!t.length)throw new Error("Provide at least one join key mapping.");let u=ne(e,"left"),f=ne(n,"right"),p=re(t,u,"left"),y=re(t,f,"right"),Q=ie(u,s,"left measure"),C=new Map,L=0;for(let d=1;d<e.length;d++){let w=e[d];oe(w,u.size,"left",d+1);let g=we(w[Q],d+1,s);L=Math.max(L,g.scale);let b=p.map(A=>w[A]),k=JSON.stringify(b),m=C.get(k);m||(m={values:b,leftRows:0,rightRows:0,before:0n,scale:0,nonzero:!1},C.set(k,m)),m.leftRows++,m.nonzero||(m.nonzero=g.units!==0n);let E=Math.max(m.scale,g.scale);m.before=J(m.before,E-m.scale)+J(g.units,E-g.scale),m.scale=E}for(let d=1;d<n.length;d++){let w=n[d];oe(w,f.size,"right",d+1);let g=y.map(k=>w[k]);if(a==="distinct"&&g.includes(""))continue;let b=C.get(JSON.stringify(g));b&&b.rightRows++}let D=0,X=0,M=0,T=0,Y=0n,Z=0n,ee=0n,_=!1,te=[];for(let d of C.values()){let w=d.leftRows,g=d.rightRows,b=g||(c==="left"?1:0),k=P(w*b),m=Math.max(0,k-w);g&&(D+=w),g>1&&(X+=w),T=P(T+k),M=P(M+m);let E=J(d.before,L-d.scale),A=E*BigInt(Math.max(0,b-1)),B=b===0?E:0n;if(Y+=E,Z+=A,ee+=B,_||(_=b!==1&&d.nonzero),i){let F=A-B;te.push({values:d.values,leftRows:w,rightRows:g,outputRows:k,before:E,repeated:A,dropped:B,absDelta:F<0n?-F:F,extraRows:m})}}let ge=te.sort(be).slice(0,i).map(d=>({values:d.values,leftRows:d.leftRows,rightRows:d.rightRows,outputRows:d.outputRows,...se(d.before,d.repeated,d.dropped,L)}));return{leftRows:e.length-1,rightRows:n.length-1,outputRows:T,matchedLeft:D,unmatchedLeft:e.length-1-D,duplicatedLeft:X,extraRows:M,hasDrift:_,...se(Y,Z,ee,L),keys:ge,keyCount:C.size}}function N(e,n=","){if(typeof e!="string")throw new TypeError("CSV input must be a string.");if(typeof n!="string"||n.length!==1||/["\r\n]/u.test(n))throw new Error("The delimiter must be one character other than a quote or newline.");let r=[],t=e.startsWith("\uFEFF")?1:0,s=i=>e[i]==="\r"||e[i]===`
+`,c=i=>i+(e.startsWith(`\r
+`,i)?2:1),a=(i,u)=>{throw new Error(`CSV record ${r.length+1}, character ${u+1}: ${i}`)};for(;t<e.length;){if(s(t)){t=c(t);continue}let i=[];for(;;){if(e[t]==='"'){let u=t++,f=t,p=[];for(;;){let y=e.indexOf('"',t);if(y<0&&a("unclosed quoted field.",u),p.push(e.slice(f,y)),t=y+1,e[t]!=='"')break;p.push('"'),f=++t}t<e.length&&e[t]!==n&&!s(t)&&a("expected a delimiter or newline after the closing quote.",t),i.push(p.join(""))}else{let u=t;for(;t<e.length&&e[t]!==n&&!s(t);)e[t]==='"'&&a("unexpected quote inside an unquoted field.",t),t++;i.push(e.slice(u,t))}if(e[t]!==n)break;t++}r.push(i),t<e.length&&(t=c(t))}return r}var ae=`order_id,customer_id,region,revenue
+1001,northstar,US,1200.00
+1002,juniper,EU,800.00
+1003,orbit,US,1600.00
+1004,northstar,EU,1850.00
+1005,cedar,APAC,975.25
+1006,marlin,US,1175.00
+1007,juniper,US,650.00
+1008,northstar,APAC,950.00
+1009,cedar,APAC,615.75
+1010,lumen,EU,500.00
+`,le=`customer_id,region,segment
+northstar,US,Enterprise
+northstar,EU,Enterprise
+northstar,APAC,Growth
+juniper,US,Growth
+juniper,EU,Enterprise
+orbit,US,Enterprise
+cedar,APAC,Startup
+marlin,US,Growth
+`,ce=`order_id,customer_id,region,revenue
+201,a,US,100.00
+202,b,EU,100.00
+203,c,US,50.00
+`,de=`customer_id,region,segment
+a,US,Retail
+a,CA,Enterprise
+c,US,Retail
+`;var o=e=>document.getElementById(e),z=new Intl.NumberFormat("en-US"),ve=/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/,I=["left","right"],l={left:[],right:[],names:{},keys:[],limit:30,demo:!1,report:null},q={},j={},R={left:0,right:0},S=new Set,O=o("import-dialog");function h(e,n,r){let t=document.createElement(e);return n&&(t.className=n),r!==void 0&&(t.textContent=r),t}function G(e,n=!1){let r=String(e),[t,s]=r.replace(/^[-+]/,"").split("."),c=t.replace(/\B(?=(\d{3})+(?!\d))/g,",");return(r.startsWith("-")?"\u2212":n&&/[1-9]/.test(r)?"+":"")+c+(s?"."+s:"")}function x(e,n,r=n+"s"){return z.format(e)+" "+(e===1?n:r)}function fe(e,n,r){e.replaceChildren(...n.map(t=>new Option(t,t))),e.value=r}function ue(e,n){if(!e.length||!e[0].length||e[0].some(t=>!t.trim()))throw new Error(n+" table needs a non-empty name for each column.");if(new Set(e[0]).size!==e[0].length)throw new Error(n+" table contains duplicate column names.");let r=e.findIndex(t=>t.length!==e[0].length);if(r!==-1)throw new Error(n+" table record "+(r+1)+" has a different number of fields than the header.")}function K(){let e=s=>l[s][0].filter(c=>!l.keys.some(a=>a[s]===c)),n=e("left"),r=e("right");if(!n.length||!r.length)return null;let t=n.find(s=>r.includes(s));return{left:t??n[0],right:t??r[0]}}function pe(e,n,r,t){ue(e,"Left"),ue(n,"Right"),Object.assign(l,{left:e,right:n,names:r,demo:t,keys:[],limit:30}),l.keys=[t?{left:"customer_id",right:"customer_id"}:K()];let s=e[0].filter((f,p)=>e.length>1&&e.slice(1,26).every(y=>ve.test(y[p].trim()))),c=/^(revenue|amount|total|sales|price|quantity|cost)$/i,a=t?"revenue":s.find(f=>c.test(f))??s.find(f=>f!==l.keys[0].left)??s[0]??e[0].find(f=>f!==l.keys[0].left)??e[0][0];fe(o("measure"),e[0],a);let i=t==="balanced"?"inner":"left";document.querySelector('input[name="join"][value="'+i+'"]').checked=!0,o("nulls").value="distinct",o("example").value=t||"custom";let u=I.map(f=>{let p=h("div","source"),y=h("div");y.append(h("span","source-name",r[f]),h("span","source-detail",x(l[f].length-1,"row")));let C=h("span","side-tag",f==="left"?"Left":"Right");return p.append(C,y),p});o("sources").replaceChildren(...u),$(),v()}function $(){let e=l.keys.map((n,r)=>{let t=l.keys.length>1,s=h("div","key-line"+(t?" removable":"")),c=h("div","key-pair");for(let a of I){let i=h("select");i.setAttribute("aria-label",(a==="left"?"Left":"Right")+" join column "+(r+1)),fe(i,l[a][0],n[a]);for(let u of i.options)u.disabled=l.keys.some((f,p)=>p!==r&&f[a]===u.value);if(i.addEventListener("change",()=>{n[a]=i.value,$(),o("key-inputs").querySelectorAll("select")[r*2+(a==="right"?1:0)].focus(),v(!0)}),a==="right"){let u=h("span","key-arrow","\u2192");u.setAttribute("aria-hidden","true"),c.append(u)}c.append(i)}if(s.append(c),t){let a=h("button","remove-key","Remove");a.type="button",a.setAttribute("aria-label","Remove key pair "+(r+1)),a.addEventListener("click",()=>{l.keys.splice(r,1),$(),o("add-key").focus(),v(!0)}),s.append(a)}return s});o("key-inputs").replaceChildren(...e),o("add-key").disabled=!K()}function he(){return{keys:l.keys,measure:o("measure").value,join:document.querySelector('input[name="join"]:checked').value,nulls:o("nulls").value,limit:l.limit}}function ke(e,n){let r=[e,n].map(a=>String(a).replace(/^[-+]/,"").split(".")),t=Math.max(...r.map(([,a=""])=>a.length)),s=r.map(([a,i=""])=>BigInt(a+i.padEnd(t,"0"))),c=s[0]>s[1]?s[0]:s[1];return s.map(a=>c===0n?"0%":Number(10000n*a/c)/100+"%")}function Ee(e,n){o("metric-label").textContent="Net change in "+n.measure;let r=o("delta");r.textContent=G(e.delta,!0);let t=!/[1-9]/.test(e.delta);r.classList.toggle("zero",t&&!e.hasDrift),r.classList.toggle("long",r.textContent.length>13),o("offset-detail").hidden=!(t&&e.hasDrift);for(let i of["before","after","dropped","repeated"])o(i).textContent=G(e[i]);let[s,c]=ke(e.before,e.after);o("before-bar").style.width=s,o("after-bar").style.width=c,o("output-rows").textContent=z.format(e.outputRows),o("repeat-detail").textContent=x(e.extraRows,"extra row"),o("drop-detail").textContent=x(e.unmatchedLeft,"unmatched row")+(n.join==="inner"?" removed":" kept"),o("input-detail").textContent="From "+x(e.leftRows,"left row"),o("suggestion").hidden=!(l.demo==="regional"&&l.keys.length===1&&l.keys[0].left==="customer_id"&&l.keys[0].right==="customer_id"),o("key-count").textContent=(e.keys.length<e.keyCount?"Top "+z.format(e.keys.length)+" of ":"")+x(e.keyCount,"key"),o("key-header").textContent=l.keys.map(i=>i.left).join(" + ");let a=e.keys.map(i=>{let u=h("tr",/[1-9]/.test(i.delta)?"drift-row":""),f=h("td");i.values.forEach((p,y)=>{y&&f.append(h("span","key-part-separator","\xB7")),f.append(h("span","key-value",p===""?"(empty)":p))}),u.append(f);for(let p of[i.leftRows,i.rightRows,i.outputRows])u.append(h("td","",z.format(p)));return u.append(h("td","",G(i.delta,!0))),u});o("key-body").replaceChildren(...a),o("no-keys").hidden=e.keyCount!==0,o("more").hidden=e.keys.length>=e.keyCount,o("analysis-error").hidden=!0,o("report").hidden=!1,o("export").disabled=!1,o("status").textContent="Net change "+r.textContent+" across "+x(e.outputRows,"output row")+"."}function v(e=!1){e&&(l.limit=30);let n=he();try{let r=W(l.left,l.right,n);Ee(r,n),l.report=r}catch(r){l.report=null,o("report").hidden=!0,o("export").disabled=!0,o("analysis-error").textContent=r.message,o("analysis-error").hidden=!1,o("status").textContent=""}}function H(e){let n=e==="balanced";pe(N(n?ce:ae),N(n?de:le),{left:"orders.csv",right:"customers.csv"},n?"balanced":"regional")}function me(e){let n=new URL(location.href);n.hash=e==="balanced"?"balanced":"";try{history.replaceState(null,"",n.href)}catch{}}o("measure").addEventListener("change",()=>v(!0));o("nulls").addEventListener("change",()=>v(!0));for(let e of document.querySelectorAll('input[name="join"]'))e.addEventListener("change",()=>v(!0));o("add-key").addEventListener("click",()=>{let e=K();e&&(l.keys.push(e),$(),o("key-inputs").lastElementChild.querySelector("select").focus(),v(!0))});o("region-key").addEventListener("click",()=>{l.keys.push({left:"region",right:"region"}),$(),v(!0),o("export").focus({preventScroll:!0})});o("more").addEventListener("click",()=>{l.limit+=30,v()});o("example").addEventListener("change",()=>{let e=o("example").value;H(e),me(e)});window.addEventListener("hashchange",()=>H(location.hash==="#balanced"?"balanced":"regional"));o("toggle-settings").addEventListener("click",()=>{let e=o("setup-body").classList.toggle("open");o("toggle-settings").setAttribute("aria-expanded",String(e)),o("toggle-settings").textContent=e?"Hide setup":"Edit setup"});o("export").addEventListener("click",()=>{if(!l.report)return;let n={...he(),limit:Math.max(1,l.report.keyCount)},r=l.report.keyCount>l.report.keys.length?W(l.left,l.right,n):l.report,t={sources:l.names,options:n,report:r},s=URL.createObjectURL(new Blob([JSON.stringify(t,null,2)+`
+`],{type:"application/json"})),c=h("a");c.href=s,c.download="jointally-report.json",document.body.append(c),c.click(),c.remove(),setTimeout(()=>URL.revokeObjectURL(s),1e3)});function V(e=""){o("import-error").textContent=e,o("import-error").hidden=!e}o("import").addEventListener("click",()=>{o("import-form").reset(),V(),S.clear(),o("load").disabled=!1;for(let e of I)q[e]=e+".csv",j[e]=null,R[e]++;O.showModal()});o("cancel").addEventListener("click",()=>O.close());o("import-cancel").addEventListener("click",()=>O.close());for(let e of I){let n=o(e+"-file"),r=o(e+"-text");r.addEventListener("input",()=>{R[e]++,n.value="",q[e]=e+".csv",j[e]=null,S.delete(e),o("load").disabled=S.size>0}),n.addEventListener("change",async()=>{let t=n.files[0];if(!t)return;let s=++R[e];j[e]=null,r.value="",S.add(e),o("load").disabled=!0,V();try{let c=new TextDecoder("utf-8",{fatal:!0}).decode(await t.arrayBuffer());if(s!==R[e])return;r.value=c,j[e]=c,q[e]=t.name}catch{s===R[e]&&V("Could not read "+t.name+" as UTF-8. Choose a UTF-8 CSV or paste its contents.")}finally{s===R[e]&&(S.delete(e),o("load").disabled=S.size>0)}})}o("import-form").addEventListener("submit",e=>{if(e.preventDefault(),!S.size)try{let n=I.map(r=>{try{return N(j[r]??o(r+"-text").value)}catch(t){throw new Error((r==="left"?"Left":"Right")+" CSV: "+t.message)}});pe(n[0],n[1],{...q},!1),me(!1),O.close()}catch(n){V(n.message)}});H(location.hash==="#balanced"?"balanced":"regional");})();
+</script>
+</body>
+</html>

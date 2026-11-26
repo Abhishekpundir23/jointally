@@ -1,0 +1,23 @@
+{
+  "name": "jointally",
+  "version": "0.1.0",
+  "description": "Find out how much a CSV join will double-count or drop, before running it.",
+  "type": "module",
+  "license": "MIT",
+  "repository": "github:Abhishekpundir23/jointally",
+  "homepage": "https://abhishekpundir23.github.io/jointally/",
+  "engines": { "node": ">=20" },
+  "bin": { "jointally": "bin/jointally.mjs" },
+  "exports": { ".": "./src/analyze.mjs", "./csv": "./src/csv.mjs" },
+  "files": ["bin", "src", "examples", "README.md", "LICENSE"],
+  "scripts": {
+    "demo": "node bin/jointally.mjs demo",
+    "test": "node --test",
+    "build": "node scripts/build.mjs",
+    "test:browser": "node scripts/browser-check.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.65.1"
+  }
+}

@@ -1,0 +1,41 @@
+name: JoinTally
+description: Check how much a CSV join will repeat or drop from a measure before running the join.
+inputs:
+  left:
+    description: Path to the left CSV, relative to the checked-out workspace or absolute.
+    required: true
+  right:
+    description: Path to the right CSV, relative to the checked-out workspace or absolute.
+    required: true
+  keys:
+    description: One key per line, as COLUMN or LEFT=RIGHT.
+    required: true
+  measure:
+    description: Decimal measure column from the left table.
+    required: true
+  join:
+    description: Join type, left or inner.
+    default: 'left'
+  nulls:
+    description: Empty-field matching rule, distinct or match.
+    default: 'distinct'
+  fail-on-drift:
+    description: Fail the step if a nonzero source amount is repeated or dropped.
+    default: 'true'
+outputs:
+  has-drift:
+    description: Whether any nonzero source amount was repeated or dropped.
+  before:
+    description: Exact sum of the measure before the join.
+  after:
+    description: Exact sum of the measure after the join.
+  delta:
+    description: Exact difference between the after and before totals.
+  output-rows:
+    description: Predicted joined row count.
+runs:
+  using: 'node24'
+  main: 'action/run.mjs'
+branding:
+  icon: 'git-merge'
+  color: 'green'

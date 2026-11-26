@@ -1,0 +1,9 @@
+customer_id,region,segment
+northstar,US,Enterprise
+northstar,EU,Enterprise
+northstar,APAC,Growth
+juniper,US,Growth
+juniper,EU,Enterprise
+orbit,US,Enterprise
+cedar,APAC,Startup
+marlin,US,Growth

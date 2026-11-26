@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#faf8f2">
+  <meta name="description" content="See how a CSV join changes your totals, down to the individual key. Both tables stay in your browser.">
+  <title>JoinTally · Join workbench</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='7' fill='%23f8bf44'/%3E%3Cpath d='M10 10v20m6-20v20m7-20v20m6-20v20M6 25l28-11' stroke='%23232123' stroke-width='2.5' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.mjs" type="module"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="mast-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="7" fill="currentColor"/><path d="M10 10v20m6-20v20m7-20v20m6-20v20M6 25l28-11" fill="none" stroke="#202022" stroke-width="2.6" stroke-linecap="round"/></svg>
+        <span>JoinTally</span>
+      </div>
+      <span class="workbench">Workbench</span>
+      <a class="repo-link" href="https://github.com/Abhishekpundir23/jointally" aria-label="View source on GitHub">GitHub <span aria-hidden="true">↗</span></a>
+      <button type="button" id="import" class="action import"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 12V3m-3.5 3.5L10 3l3.5 3.5M3 12v4h14v-4"/></svg>Import CSVs</button>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Join setup">
+      <div class="setup-heading"><h2>Join setup</h2><button id="toggle-settings" class="quiet mobile-only" type="button" aria-controls="setup-body" aria-expanded="false">Edit setup</button></div>
+      <div id="setup-body">
+        <section class="field-group sources"><h3>Tables</h3><div id="sources"></div></section>
+        <section class="field-group"><h3>Join keys</h3><div class="key-labels" aria-hidden="true"><span>Left column</span><span>Right column</span></div><div id="key-inputs"></div><button id="add-key" class="add-key" type="button">+ Add key</button></section>
+        <div class="field-group"><label for="measure">Measure</label><select id="measure"></select></div>
+        <fieldset class="field-group"><legend>Join type</legend><div class="segments"><label><input type="radio" name="join" value="left" checked><span>Left join</span></label><label><input type="radio" name="join" value="inner"><span>Inner join</span></label></div></fieldset>
+        <div class="field-group"><label for="nulls">Empty keys</label><select id="nulls"><option value="distinct">Never match</option><option value="match">Match empty fields</option></select></div>
+        <div class="field-group example-field"><label for="example">Try an example</label><select id="example"><option value="regional">Regional customers</option><option value="balanced">Hidden offset</option><option value="custom" hidden>Custom tables</option></select></div>
+      </div>
+    </aside>
+    <main>
+      <div class="report-head"><h1>Join impact</h1><button id="export" class="quiet" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m-3.5-3.5L10 12l3.5-3.5M3 13v3h14v-3"/></svg>Export JSON</button></div>
+      <p id="analysis-error" role="alert" class="error" hidden></p>
+      <div id="report" hidden>
+        <section class="hero" aria-labelledby="metric-label">
+          <div class="net"><h2 id="metric-label">Net change</h2><div id="delta" class="delta"></div><p id="offset-detail" hidden>Row-level changes offset in the total.</p></div>
+          <div class="bars">
+            <div class="bar-head"><span>Before join</span><strong id="before"></strong></div><div class="track"><span id="before-bar"></span></div>
+            <div class="bar-head"><span>After join</span><strong id="after"></strong></div><div class="track"><span id="after-bar"></span></div>
+          </div>
+        </section>
+        <div class="components">
+          <section><h2>Repeated amount</h2><strong id="repeated"></strong><p id="repeat-detail"></p></section>
+          <section><h2>Dropped amount</h2><strong id="dropped"></strong><p id="drop-detail"></p></section>
+          <section><h2>Output rows</h2><strong id="output-rows"></strong><p id="input-detail"></p></section>
+        </div>
+        <div class="suggestion" id="suggestion" hidden>
+          <div><h2>Match on region too</h2><p>Try the demo with a two-column customer key.</p></div><button type="button" id="region-key" class="action">Add region key <span aria-hidden="true">↗</span></button>
+        </div>
+        <section class="breakdown" aria-labelledby="breakdown-title">
+          <div class="breakdown-head"><h2 id="breakdown-title">Key breakdown</h2><span id="key-count"></span></div>
+          <div class="table-scroll" tabindex="0" aria-label="Key breakdown table"><table><thead><tr><th id="key-header" scope="col">Key</th><th scope="col" aria-label="Left rows"><span class="wide-label">Left rows</span><span class="short-label" aria-hidden="true">Left</span></th><th scope="col" aria-label="Right matches"><span class="wide-label">Right matches</span><span class="short-label" aria-hidden="true">Right</span></th><th scope="col" aria-label="Output rows"><span class="wide-label">Output rows</span><span class="short-label" aria-hidden="true">Joined</span></th><th scope="col" aria-label="Amount change"><span class="wide-label">Amount change</span><span class="short-label" aria-hidden="true">Change</span></th></tr></thead><tbody id="key-body"></tbody></table></div>
+          <p id="no-keys" hidden>The left table contains no data rows.</p>
+          <button type="button" id="more" class="quiet" hidden>Show more keys</button>
+        </section>
+      </div>
+      <p class="sr-only" role="status" id="status"></p>
+      <noscript>Enable JavaScript to analyze your CSVs in this browser.</noscript>
+    </main>
+  </div>
+  <dialog aria-labelledby="import-heading" id="import-dialog">
+    <form id="import-form"><div class="dialog-head"><h2 id="import-heading">Import CSVs</h2><button id="cancel" type="button" class="close" aria-label="Close import dialog">×</button></div>
+      <p class="dialog-note">Choose files or paste CSV with a header row. Both tables stay in this browser.</p>
+      <div class="csv-inputs">
+        <div><label for="left-text">Left table</label><input type="file" id="left-file" aria-label="Choose left CSV" accept=".csv,text/csv,text/plain"><textarea id="left-text" required spellcheck="false" placeholder="order_id,customer_id,revenue"></textarea></div>
+        <div><label for="right-text">Right table</label><input type="file" id="right-file" aria-label="Choose right CSV" accept=".csv,text/csv,text/plain"><textarea id="right-text" required spellcheck="false" placeholder="customer_id,region"></textarea></div>
+      </div>
+      <p id="import-error" class="error" role="alert" hidden></p>
+      <div class="dialog-actions"><button type="button" id="import-cancel" class="quiet">Cancel</button><button type="submit" id="load" class="action">Load tables</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
